@@ -1,0 +1,4 @@
+-  fpinscala
+
+Exercises of the [[https://github.com/fpinscala/fpinscala][Book
+Functional Programming in Scala]] (Scala Red Book)
