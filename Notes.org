@@ -1,0 +1,36 @@
+#+TITLE Functional Programming in Scala Notes
+
+
+
+* Data Structures
+
+** Companion Objects
+ Convenience functions for creating or working with values of the data type.
+
+** Variadic Functions in Scala
+ Functions accepting zero or more arguments of type A. Usually are defined as apply in companion objects. Allow syntax like =List(1,2,3,4)=. =def apply[A](as: A*): List[A]=. =apply(as.tail: _*)=, =_*= allow to pass a =Seq= to a variadic method.
+
+** Designing pure data structures
+ See [[https://github.com/fpinscala/fpinscala/wiki/Chapter-3:-Functional-data-structures#purely-functional-data-structures][Chapter 3 notes]]
+
+** Type inference
+ dropWhile(xs, f) requires to anotate the function parameter, like =dropWhile(xs, (x:Int) => x < 4). To avoid the anotation, use to arg list: =dropWhile(xs)(f)= and now call it =dropWhile(xs)(x => x < 4). Now scala can infer the type (always from left to right). It is a good practice to group and order function arguments into multiple argument list to maximize type inference.
+
+** Trees
+*** ADT
+ Data type defined by one or more data constructors, each of which may contain zero or more arguments.
+ - Data type: sum or union of its data constructors.
+ - Each data constructor is the product of its arguments.
+
+* Handling errors
+
+A common pattern is to use filter to convert successes into failures if the successful values don't match the given predicate. A common pattern is to transform an =Option= via calls to =map, flatMap= and/or =filter=, and then use =getOrElse= to do error handling at the end:
+
+
+#+BEGIN_SRC scala
+val dept: String =
+  lookupByName("Joe").
+  map(_.dept).
+  filter(_ != "Accounting").
+  getOrElse("Default")
+#+END_SRC
