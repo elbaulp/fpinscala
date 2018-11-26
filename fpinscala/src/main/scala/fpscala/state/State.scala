@@ -1,7 +1,6 @@
 package fpscala.state
 
 import scala.annotation.switch
-import scala.util.Random
 
 trait RNG {
   def nextInt: (Int, RNG) // Should generate a random `Int`. We'll later define other functions in terms of `nextInt`.
@@ -20,6 +19,7 @@ object RNG {
     }
   }
 
+  // State action data type
   type Rand[+A] = RNG => (A, RNG)
 
   val int: Rand[Int] = _.nextInt
@@ -32,6 +32,10 @@ object RNG {
       val (a, rng2) = s(rng)
       (f(a), rng2)
     }
+
+
+  val doubleViaMap: Rand[Double] =
+    map(nonNegativeInt)(_ / (Int.MaxValue.toDouble + 1))
 
   // Wrongapproach
   def nonNegativeInt_(rng: RNG): (Int, RNG) = {
@@ -57,23 +61,108 @@ object RNG {
     (i / (Int.MaxValue.toDouble + 1), r)
   }
 
-  def intDouble(rng: RNG): ((Int, Double), RNG) = ???
+  def intDouble(rng: RNG): ((Int, Double), RNG) = {
+    val (i, rng2) = rng.nextInt
+    val (d, rng3) = double(rng2)
+    ((i, d), rng3)
+  }
 
-  def doubleInt(rng: RNG): ((Double, Int), RNG) = ???
+  def doubleInt(rng: RNG): ((Double, Int), RNG) = {
+    val ((i, d), rng2) = intDouble(rng)
+    ((d, i), rng2)
+  }
 
-  def double3(rng: RNG): ((Double, Double, Double), RNG) = ???
+  def double3(rng: RNG): ((Double, Double, Double), RNG) = {
+    val (d1, rng2) = double(rng)
+    val (d2, rng3) = double(rng2)
+    val (d3, rng4) = double(rng3)
 
-  def ints(count: Int)(rng: RNG): (List[Int], RNG) = ???
+    ((d1, d2, d3), rng4)
+  }
 
-  def map2[A, B, C](ra: Rand[A], rb: Rand[B])(f: (A, B) => C): Rand[C] = ???
+  def ints(count: Int)(rng: RNG): (List[Int], RNG) = {
+    def go(c: Int)(acc: List[Int], r: RNG): (List[Int], RNG) = (c: @switch) match {
+      case 0 => (acc, r)
+      case x if x > 0 =>
+        val (n, rn) = r.nextInt
+        go(c - 1)(n +: acc, rn)
+    }
 
-  def sequence[A](fs: List[Rand[A]]): Rand[List[A]] = ???
+    go(count)(Nil, rng)
+  }
+
+  def ints_(n: Int): Rand[List[Int]] =
+    sequence(List.fill(n)(int))
+
+  def both[A, B](ra: Rand[A], rb: Rand[B]): Rand[(A,B)] =
+    map2(ra, rb)((_, _))
+
+  val randIntDouble: Rand[(Int, Double)] =
+    both(int, double)
+
+  val randDoubleInt: Rand[(Double, Int)] =
+    both(double, int)
+
+  def map2[A, B, C](ra: Rand[A], rb: Rand[B])(f: (A, B) => C): Rand[C] = rng => {
+    val (a, r1) = ra(rng)
+    val (b, r2) = rb(r1)
+
+    (f(a,b), r2)
+  }
+
+  def sequence[A](fs: List[Rand[A]]): Rand[List[A]] =
+    fs.:\(unit(List.empty[A]))((r, l) =>  map2(r, l)(_ +: _))
 
   def flatMap[A, B](f: Rand[A])(g: A => Rand[B]): Rand[B] = ???
 
 
   def main(args: Array[String]): Unit = {
 
+    val s1 = Simple(1)
+    val s2 = Simple(2)
+
+    println(s"IntDouble: ${intDouble(Simple(123))}")
+    println(s"IntDouble: ${intDouble(Simple(124))}")
+
+    println(s"DoubleInt: ${doubleInt(Simple(124))}")
+    println(s"DoubleInt: ${doubleInt(Simple(123))}")
+
+    println(s"Ints: ${ints(100)(Simple(123))}")
+    val ints1 = ints(100)(Simple(123))
+    val ints2 = ints(100)(Simple(123))
+    println(s"Ints are equal for same seed: ${ints1.equals(ints2)}")
+
+    println(s"int val ${int(s1)}")
+
+    println(s"double ${double(s1)}")
+    println(s"doubleviaMap ${doubleViaMap(s1)}")
+
+
+    println(s"unit ${unit(2)(s1)}")
+    println(s"unit ${unit(1 :: 2 :: Nil)(s1)}")
+    println(s"map2 ${map2(int, int)(_ + _)(s1)}")
+    println(s"map2 ${map2(int, int)(_ + _)(s1)}")
+    println(s"map2 ${map2(int, int)(_ + _)(s2)}")
+
+    println(s"Both ${both(int, int)(s1)}")
+    println(s"Both ${both(int, int)(s1)}")
+    println(s"Both ${both(int, int)(s2)}")
+
+    println(s"IntDouble ${randIntDouble(s1)}")
+    println(s"IntDouble ${randIntDouble(s1)}")
+    println(s"IntDouble ${randIntDouble(s2)}")
+
+    println(s"DoubleInt ${randDoubleInt(s2)}")
+    println(s"DoubleInt ${randDoubleInt(s2)}")
+    println(s"DoubleInt ${randDoubleInt(s1)}")
+
+    println(s"Sequence ${sequence(int :: int :: int :: Nil)(s1)}")
+    println(s"Sequence ${sequence(int :: int :: int :: Nil)(s1)}")
+    println(s"Sequence ${sequence(int :: int :: int :: Nil)(s2)}")
+
+    println(s"ints via Sequence ${ints_(10)(s1)}")
+    println(s"ints via Sequence ${ints_(10)(s1)}")
+    println(s"ints via Sequence ${ints_(10)(s2)}")
   }
 }
 
