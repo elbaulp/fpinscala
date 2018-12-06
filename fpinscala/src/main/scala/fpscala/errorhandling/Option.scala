@@ -51,26 +51,26 @@ object Option {
   //  @tailrec
   def sequence[A](a: List[Option[A]]): Option[List[A]] = (a: @switch) match {
     case Nil ⇒ Some(Nil)
-    case h :: t ⇒  h flatMap (hh ⇒ sequence(t) map (hh +: _))
+    case h :: t ⇒ h flatMap (hh ⇒ sequence(t) map (hh +: _))
   }
 
   def sequence_1[A](a: List[Option[A]]): Option[List[A]] =
-    a.foldRight[Option[List[A]]](Some(Nil))((a, b) => map2(a, b)(_ +: _))
+    a.foldRight[Option[List[A]]](Some(Nil))((a, b) ⇒ map2(a, b)(_ +: _))
 
-  def traverse[A, B](a: List[A])(f: A => Option[B]): Option[List[B]] = (a: @switch) match {
-    case Nil => Some(Nil)
-    case h :: t =>
+  def traverse[A, B](a: List[A])(f: A ⇒ Option[B]): Option[List[B]] = (a: @switch) match {
+    case Nil ⇒ Some(Nil)
+    case h :: t ⇒
       map2(f(h), traverse(t)(f))(_ :: _)
   }
 
-  def traverse_1[A, B](a: List[A])(f: A => Option[B]): Option[List[B]] = ???
+  def traverse_1[A, B](a: List[A])(f: A ⇒ Option[B]): Option[List[B]] = ???
 
   def sequenceViaTraverse[A](a: List[Option[A]]): Option[List[A]] =
     traverse(a)(identity)
 
-  def Try[A](a: => A): Option[A] =
+  def Try[A](a: ⇒ A): Option[A] =
     try Some(a)
-    catch { case e: Exception => None}
+    catch { case e: Exception ⇒ None }
 
   def main(args: Array[String]): Unit = {
     val a = List("1", "2", "3", "a")
@@ -78,12 +78,11 @@ object Option {
     val c = List(Some(1), Some(2))
     val d = List(None, Some(2))
 
-//    println(s"${Option.traverse(a)(x => Try{x.toInt})}")
-//    println(s"${Option.traverse(b)(x => Try{x.toInt})}")
+    //    println(s"${Option.traverse(a)(x => Try{x.toInt})}")
+    //    println(s"${Option.traverse(b)(x => Try{x.toInt})}")
     println(s"${Option.sequenceViaTraverse(c)}")
     println(s"${Option.sequenceViaTraverse(d)}")
 
   }
 }
-
 
