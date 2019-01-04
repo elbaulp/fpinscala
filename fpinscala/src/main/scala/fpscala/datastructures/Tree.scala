@@ -20,43 +20,43 @@ object Tree {
 
   // EX 3.25
   def size2[T](t: Tree[T]): Int = t match {
-    case Leaf(_) => 1
-    case Branch(l, r) => 1 + size2(l) + size2(r)
+    case Leaf(_) ⇒ 1
+    case Branch(l, r) ⇒ 1 + size2(l) + size2(r)
   }
 
   // ex 3.26
   def maximum(t: Tree[Int]): Int = t match {
-    case Leaf(n) => n
-    case Branch(l, r) => maximum(l) max maximum(r)
+    case Leaf(n) ⇒ n
+    case Branch(l, r) ⇒ maximum(l) max maximum(r)
   }
 
   // 3.27
   def depth[T](t: Tree[T]): Int = t match {
-    case Leaf(_) => 0
-    case Branch(l, r) =>
+    case Leaf(_) ⇒ 0
+    case Branch(l, r) ⇒
       1 + (depth(l) max depth(r))
   }
 
   // 3.28
-  def map[T, R](t: Tree[T])(f: T => R): Tree[R] = t match {
-    case Leaf(x) => Leaf(f(x))
-    case Branch(l, r) => Branch(map(l)(f), map(r)(f))
+  def map[T, R](t: Tree[T])(f: T ⇒ R): Tree[R] = t match {
+    case Leaf(x) ⇒ Leaf(f(x))
+    case Branch(l, r) ⇒ Branch(map(l)(f), map(r)(f))
   }
 
   // 3.29
-  def fold[T, R](t: Tree[T])(f: T => R)(g: (R, R) => R): R = t match {
-    case Leaf(x) => f(x)
-    case Branch(l, r) => g(fold(l)(f)(g), fold(r)(f)(g))
+  def fold[T, R](t: Tree[T])(f: T ⇒ R)(g: (R, R) ⇒ R): R = t match {
+    case Leaf(x) ⇒ f(x)
+    case Branch(l, r) ⇒ g(fold(l)(f)(g), fold(r)(f)(g))
   }
 
   def sizeViaFold[T](t: Tree[T]): Int =
-    fold(t)(_ => 1)(1 + _ + _)
+    fold(t)(_ ⇒ 1)(1 + _ + _)
 
   def maxViaFold(t: Tree[Int]): Int =
-    fold(t)(n => n)(_ max _)
+    fold(t)(n ⇒ n)(_ max _)
 
   def depthViaFold[T](t: Tree[T]): Int =
-    fold(t)(_ => 0)(1 + _ max _)
+    fold(t)(_ ⇒ 0)(1 + _ max _)
 
   def main(args: Array[String]): Unit = {
     val a = Branch(Branch(Leaf(2), Leaf(3)), Leaf(1))
@@ -65,7 +65,7 @@ object Tree {
     println(Tree.size2(a))
     println(Tree.maximum(a))
     println(Tree.depth(a))
-    println(Tree.map(a)(x => x + 2))
+    println(Tree.map(a)(x ⇒ x + 2))
 
     println(Tree.sizeViaFold(a))
     println(Tree.maxViaFold(a))

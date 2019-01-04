@@ -166,6 +166,10 @@ trait Stream[+A] {
       case _ ⇒ None
     }
 
+  // special case of `zipWith`
+  def zip[B](s2: Stream[B]): Stream[(A, B)] =
+    zipWith(s2)((_, _))
+
   def zipAll[B](s2: Stream[B]): Stream[(Option[A], Option[B])] =
     zipWithAll(s2)((_, _))
 
@@ -319,4 +323,3 @@ object Stream {
     println(s"scanRight ${s.scanRight(0)(_ + _).toListFast}")
   }
 }
-
