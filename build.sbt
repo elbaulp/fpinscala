@@ -4,9 +4,9 @@ lazy val root = (project in file(".")).
   settings(
     inThisBuild(List(
       organization := "com.fpscala",
-      scalaVersion := "2.12.4",
+      scalaVersion := "2.12.8",
       version      := "0.1.0-SNAPSHOT"
     )),
-    name := "Hello",
+    name := "FP In Scala",
     libraryDependencies += scalaTest % Test
   )

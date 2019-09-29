@@ -1,6 +1,6 @@
 package fpscala.state
 
-import scala.annotation.{ switch, tailrec }
+import scala.annotation.{switch, tailrec}
 
 trait RNG {
   def nextInt: (Int, RNG) // Should generate a random `Int`. We'll later define other functions in terms of `nextInt`.
@@ -12,9 +12,9 @@ object RNG {
 
   case class Simple(seed: Long) extends RNG {
     def nextInt: (Int, RNG) = {
-      val newSeed = (seed * 0x5DEECE66DL + 0xBL) & 0xFFFFFFFFFFFFL // `&` is bitwise AND. We use the current seed to generate a new seed.
-      val nextRNG = Simple(newSeed) // The next state, which is an `RNG` instance created from the new seed.
-      val n = (newSeed >>> 16).toInt // `>>>` is right binary shift with zero fill. The value `n` is our new pseudo-random integer.
+      val newSeed = (seed * 0X5DEECE66DL + 0XBL) & 0XFFFFFFFFFFFFL // `&` is bitwise AND. We use the current seed to generate a new seed.
+      val nextRNG = Simple(newSeed)                                // The next state, which is an `RNG` instance created from the new seed.
+      val n       = (newSeed >>> 16).toInt                         // `>>>` is right binary shift with zero fill. The value `n` is our new pseudo-random integer.
       (n, nextRNG) // The return value is a tuple containing both a pseudo-random integer and the next `RNG` state.
     }
   }
@@ -43,10 +43,14 @@ object RNG {
   def mapViaFlatMap[A, B](s: Rand[A])(f: A ⇒ B): Rand[B] =
     flatMap(s)(i ⇒ unit(f(i)))
 
-  def map2ViaFlatMap[A, B, C](ra: Rand[A], rb: Rand[B])(f: (A, B) ⇒ C): Rand[C] =
+  def map2ViaFlatMap[A, B, C](ra: Rand[A], rb: Rand[B])(
+      f: (A, B) ⇒ C
+  ): Rand[C] =
     flatMap(ra)(a ⇒ flatMap(rb)(b ⇒ unit(f(a, b))))
 
-  def map2ViaFlatMapBook[A, B, C](ra: Rand[A], rb: Rand[B])(f: (A, B) ⇒ C): Rand[C] =
+  def map2ViaFlatMapBook[A, B, C](ra: Rand[A], rb: Rand[B])(
+      f: (A, B) ⇒ C
+  ): Rand[C] =
     flatMap(ra)(a ⇒ map(rb)(b ⇒ f(a, b)))
 
   val doubleViaMap: Rand[Double] =
@@ -57,8 +61,8 @@ object RNG {
     val (i, rng2) = rng.nextInt
     (i: @switch) match {
       case x if x == Int.MinValue ⇒ (0, rng2)
-      case x if x < 0 ⇒ (-x, rng2)
-      case _ ⇒ (i, rng2)
+      case x if x < 0             ⇒ (-x, rng2)
+      case _                      ⇒ (i, rng2)
     }
   }
 
@@ -96,12 +100,13 @@ object RNG {
   }
 
   def ints(count: Int)(rng: RNG): (List[Int], RNG) = {
-    def go(c: Int)(acc: List[Int], r: RNG): (List[Int], RNG) = (c: @switch) match {
-      case 0 ⇒ (acc, r)
-      case x if x > 0 ⇒
-        val (n, rn) = r.nextInt
-        go(c - 1)(n +: acc, rn)
-    }
+    def go(c: Int)(acc: List[Int], r: RNG): (List[Int], RNG) =
+      (c: @switch) match {
+        case 0 ⇒ (acc, r)
+        case x if x > 0 ⇒
+          val (n, rn) = r.nextInt
+          go(c - 1)(n +: acc, rn)
+      }
 
     go(count)(Nil, rng)
   }
@@ -197,19 +202,25 @@ object RNG {
     println(s"map2viaFlatMap ${map2ViaFlatMap(int, int)(_ + _)(s2)}")
     println(s"map2viaFlatMapBook ${map2ViaFlatMapBook(int, int)(_ + _)(s2)}")
 
-    val s = State[String, Int](s ⇒ (0, s))
+    val s     = State[String, Int](s ⇒ (0, s))
     val units = State.unit[String, String]("S1")
 
-    println(s"UNIT: ${units.run("UNIT")}, unit map ${units.map(x ⇒ x + x).run("STATE")}")
+    println(
+      s"UNIT: ${units.run("UNIT")}, unit map ${units.map(x ⇒ x + x).run("STATE")}"
+    )
     println(s"State ${s.flatMap(i ⇒ State(s ⇒ (i + 1, s + s))).run("GO!")}")
 
-    val sequences = State[String, Int](s ⇒ (0, s)) :: State[String, Int](s ⇒ (1, s)) :: Nil
+    val sequences = State[String, Int](s ⇒ (0, s)) :: State[String, Int](
+      s ⇒ (1, s)
+    ) :: Nil
     println(s"Sequence ${State.sequence(sequences).run("GO")}")
     println(s"SequenceR ${State.sequenceViaFoldRight(sequences).run("GO")}")
     println(s"SequenceL ${State.sequenceViaFoldLeft(sequences).run("GO")}")
 
     val machine = Machine(true, 5, 10)
-    val usedMachine = Candy.simulateMachine(Coin :: Turn :: Coin :: Turn :: Coin :: Turn :: Coin :: Turn :: Nil)
+    val usedMachine = Candy.simulateMachine(
+      Coin :: Turn :: Coin :: Turn :: Coin :: Turn :: Coin :: Turn :: Nil
+    )
     println(s"Final Machine ${usedMachine.run(machine)}")
 
   }
@@ -235,10 +246,11 @@ import State._
 object State {
   type Rand[A] = State[RNG, A]
 
-  def modify[S](f: S ⇒ S): State[S, Unit] = for {
-    s ← get // Gets the current state and assigns it to `s`.
-    _ ← set(f(s)) // Sets the new state to `f` applied to `s`.
-  } yield ()
+  def modify[S](f: S ⇒ S): State[S, Unit] =
+    for {
+      s ← get       // Gets the current state and assigns it to `s`.
+      _ ← set(f(s)) // Sets the new state to `f` applied to `s`.
+    } yield ()
 
   def get[S]: State[S, S] = State(s ⇒ (s, s))
 
@@ -249,10 +261,11 @@ object State {
 
   def sequence[S, A](fs: List[State[S, A]]): State[S, List[A]] = {
     @tailrec
-    def go(s: S, l: List[State[S, A]])(acc: List[A]): (List[A], S) = (l: @switch) match {
-      case Nil ⇒ (acc.reverse, s)
-      case h +: t ⇒ h run s match { case (a, ns) ⇒ go(ns, t)(a +: acc) }
-    }
+    def go(s: S, l: List[State[S, A]])(acc: List[A]): (List[A], S) =
+      (l: @switch) match {
+        case Nil    ⇒ (acc.reverse, s)
+        case h +: t ⇒ h run s match { case (a, ns) ⇒ go(ns, t)(a +: acc) }
+      }
 
     State(s ⇒ go(s, fs)(List.empty[A]))
   }
@@ -271,20 +284,23 @@ case object Turn extends Input
 case class Machine(locked: Boolean, candies: Int, coins: Int)
 
 object Candy {
-  def update = (i: Input) ⇒ (s: Machine) ⇒
-    (i, s) match {
-      case (_, Machine(_, 0, _)) ⇒ s
-      case (Coin, Machine(false, _, _)) ⇒ s
-      case (Turn, Machine(true, _, _)) ⇒ s
-      case (Coin, Machine(true, candy, coin)) ⇒
-        Machine(false, candy, coin + 1)
-      case (Turn, Machine(false, candy, coin)) ⇒
-        Machine(true, candy - 1, coin)
-    }
+  def update =
+    (i: Input) ⇒
+      (s: Machine) ⇒
+        (i, s) match {
+          case (_, Machine(_, 0, _))        ⇒ s
+          case (Coin, Machine(false, _, _)) ⇒ s
+          case (Turn, Machine(true, _, _))  ⇒ s
+          case (Coin, Machine(true, candy, coin)) ⇒
+            Machine(false, candy, coin + 1)
+          case (Turn, Machine(false, candy, coin)) ⇒
+            Machine(true, candy - 1, coin)
+        }
 
-  def simulateMachine(inputs: List[Input]): State[Machine, (Int, Int)] = for {
-    _ ← sequence(inputs map (modify[Machine] _ compose update))
-    s ← get
-  } yield (s.coins, s.candies)
+  def simulateMachine(inputs: List[Input]): State[Machine, (Int, Int)] =
+    for {
+      _ ← sequence(inputs map (modify[Machine] _ compose update))
+      s ← get
+    } yield (s.coins, s.candies)
 
 }

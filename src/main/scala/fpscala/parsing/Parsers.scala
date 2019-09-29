@@ -19,10 +19,10 @@ import java.util.regex.Pattern
 import fpscala.testing.Prop._
 import fpscala.testing._
 
-import scala.language.{ higherKinds, implicitConversions }
+import scala.language.{higherKinds, implicitConversions}
 import scala.util.matching.Regex
 
-trait Parsers[Parser[+_]] {
+trait Parsers[Parser[+ _]] {
   self ⇒ // so inner classes may call methods of trait
 
   // recognizes and returns a single String
@@ -30,7 +30,9 @@ trait Parsers[Parser[+_]] {
 
   implicit def operators[A](p: Parser[A]): ParserOps[A] = ParserOps[A](p)
 
-  implicit def asStringParser[A](a: A)(implicit f: A ⇒ Parser[String]): ParserOps[String] = ParserOps(f(a))
+  implicit def asStringParser[A](a: A)(
+      implicit f: A ⇒ Parser[String]
+  ): ParserOps[String] = ParserOps(f(a))
 
   implicit def regex(r: Regex): Parser[String]
 
@@ -48,22 +50,21 @@ trait Parsers[Parser[+_]] {
     }
 
   def char(c: Char): Parser[Char] = string(c.toString) map (_.charAt(0))
-
   def attempt[A](p: Parser[A]): Parser[A]
 
   def label[A](msg: String)(p: Parser[A]): Parser[A]
 
   /**
-   * Sequences two parsers, ignoring the result of the first.
-   * We wrap the ignored half in slice, since we don't care about its result.
-   */
+    * Sequences two parsers, ignoring the result of the first.
+    * We wrap the ignored half in slice, since we don't care about its result.
+    */
   def skipL[B](p: Parser[Any], p2: ⇒ Parser[B]): Parser[B] =
     map2(slice(p), p2)((_, b) ⇒ b)
 
   /**
-   * Sequences two parsers, ignoring the result of the second.
-   * We wrap the ignored half in slice, since we don't care about its result.
-   */
+    * Sequences two parsers, ignoring the result of the second.
+    * We wrap the ignored half in slice, since we don't care about its result.
+    */
   def skipR[A](p: Parser[A], p2: ⇒ Parser[Any]): Parser[A] =
     map2(p, slice(p2))((a, _) ⇒ a)
 
@@ -102,7 +103,8 @@ trait Parsers[Parser[+_]] {
 
   // Aditional parsing task
   // Parser[Int] that recognizes zero or more 'a' chars.
-  def many[A](p: Parser[A]): Parser[List[A]] = map2(p, many(p))(_ +: _) | succeed(List.empty)
+  def many[A](p: Parser[A]): Parser[List[A]] =
+    map2(p, many(p))(_ +: _) | succeed(List.empty)
 
   def many1[A](p: Parser[A]): Parser[List[A]] = map2(p, many(p))(_ +: _)
 
@@ -117,9 +119,9 @@ trait Parsers[Parser[+_]] {
   def digits: Parser[String] = "\\d+".r
 
   /**
-   * C/Java style floating point literals, e.g .1, -1.0, 1e9, 1E-23, etc.
-   * Result is left as a string to keep full precision
-   */
+    * C/Java style floating point literals, e.g .1, -1.0, 1e9, 1E-23, etc.
+    * Result is left as a string to keep full precision
+    */
   def doubleString: Parser[String] =
     token("[-+]?([0-9]*\\.)?[0-9]+([eE][-+]?[0-9]+)?".r)
 
@@ -132,7 +134,9 @@ trait Parsers[Parser[+_]] {
     doubleString map (_.toDouble) label "double literal"
 
   /** Wraps `p` in start/stop delimiters. */
-  def surround[A](start: Parser[Any], stop: Parser[Any])(p: ⇒ Parser[A]): Parser[A] =
+  def surround[A](start: Parser[Any], stop: Parser[Any])(
+      p: ⇒ Parser[A]
+  ): Parser[A] =
     start *> p <* stop
 
   /** Parser which consumes reluctantly until it encounters the given string. */
@@ -207,7 +211,9 @@ trait Parsers[Parser[+_]] {
 
     def unbiasR[A, B, C](p: (A, (B, C))): (A, B, C) = (p._1, p._2._1, p._2._2)
 
-    def productAssocLaw[A, B, C](a: Parser[A], b: Parser[B], c: Parser[C])(in: Gen[String]): Prop =
+    def productAssocLaw[A, B, C](a: Parser[A], b: Parser[B], c: Parser[C])(
+        in: Gen[String]
+    ): Prop =
       forAll(in)(s ⇒ ((a ** b) ** c map unbiasL) == (a ** (b ** c) map unbiasR))
   }
 
@@ -216,7 +222,7 @@ trait Parsers[Parser[+_]] {
 case class Location(input: String, offset: Int = 0) {
 
   lazy val line = input.slice(0, offset + 1).count(_ == '\n') + 1
-  lazy val col = input.slice(0, offset + 1).reverse.indexOf('\n')
+  lazy val col  = input.slice(0, offset + 1).reverse.indexOf('\n')
 
   def toError(msg: String): ParseError =
     ParseError(List((this, msg)))
@@ -230,6 +236,6 @@ case class Location(input: String, offset: Int = 0) {
 }
 
 case class ParseError(
-  stack: List[(Location, String)] = List(),
-  otherFailures: List[ParseError] = List()) {
-}
+    stack: List[(Location, String)] = List(),
+    otherFailures: List[ParseError] = List()
+) {}

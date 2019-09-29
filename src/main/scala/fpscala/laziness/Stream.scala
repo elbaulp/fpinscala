@@ -2,13 +2,14 @@ package fpscala.laziness
 
 import fpscala.laziness.Stream._
 
-import scala.annotation.{ switch, tailrec }
+import scala.annotation.{switch, tailrec}
 
 trait Stream[+A] {
 
   def foldRight[B](z: ⇒ B)(f: (A, ⇒ B) ⇒ B): B = // The arrow `=>` in front of the argument type `B` means that the function `f` takes its second argument by name and may choose not to evaluate it.
     this match {
-      case Cons(h, t) ⇒ f(h(), t().foldRight(z)(f)) // If `f` doesn't evaluate its second argument, the recursion never occurs.
+      case Cons(h, t) ⇒
+        f(h(), t().foldRight(z)(f)) // If `f` doesn't evaluate its second argument, the recursion never occurs.
       case _ ⇒ z
     }
 
@@ -17,12 +18,12 @@ trait Stream[+A] {
 
   def exists_1(p: A ⇒ Boolean): Boolean = this match {
     case Cons(h, t) ⇒ p(h()) || t().exists_1(p)
-    case _ ⇒ false
+    case _          ⇒ false
   }
 
   @tailrec
   final def find(f: A ⇒ Boolean): Option[A] = this match {
-    case Empty ⇒ None
+    case Empty      ⇒ None
     case Cons(h, t) ⇒ if (f(h())) Some(h()) else t().find(f)
   }
 
@@ -33,14 +34,14 @@ trait Stream[+A] {
     filter(f).headOption
 
   def toListRecursive: List[A] = this match {
-    case Empty ⇒ Nil
+    case Empty      ⇒ Nil
     case Cons(h, t) ⇒ h() +: t().toListRecursive
   }
 
   def toList: List[A] = {
     @tailrec
     def go(acc: List[A])(s: Stream[A]): List[A] = (s: @switch) match {
-      case Empty ⇒ acc
+      case Empty      ⇒ acc
       case Cons(h, t) ⇒ go(h() +: acc)(t())
     }
 
@@ -52,7 +53,7 @@ trait Stream[+A] {
   mutable list buffer and an explicit loop instead. Note that the mutable
   list buffer never escapes our `toList` method, so this function is
   still _pure_.
-  */
+   */
   def toListFast: List[A] = {
     val buf = new collection.mutable.ListBuffer[A]
 
@@ -69,9 +70,9 @@ trait Stream[+A] {
 
   // My version
   def take2(n: Int): Stream[A] = (this: @switch) match {
-    case Cons(h, t) if n > 1 ⇒ cons(h(), t() take2 n - 1)
+    case Cons(h, t) if n > 1  ⇒ cons(h(), t() take2 n - 1)
     case Cons(h, _) if n == 1 ⇒ cons(h(), empty)
-    case _ ⇒ empty
+    case _                    ⇒ empty
   }
 
   // Book's version
@@ -80,36 +81,36 @@ trait Stream[+A] {
       calling take on the invoked tail of a cons cell. We make sure that the tail is not invoked unless
       we need to, by handling the special case where n == 1 separately. If n == 0, we can avoid looking
       at the stream at all.
-    */
+   */
   def take(n: Int): Stream[A] = this match {
-    case Cons(h, t) if n > 1 ⇒ cons(h(), t().take(n - 1))
+    case Cons(h, t) if n > 1  ⇒ cons(h(), t().take(n - 1))
     case Cons(h, _) if n == 1 ⇒ cons(h(), empty)
-    case _ ⇒ empty
+    case _                    ⇒ empty
   }
 
   def takeViaUnfold(n: Int): Stream[A] =
     unfold((this, n)) {
       case (Cons(a, b), n) if n > 1 ⇒ Some((a(), (b(), n - 1)))
-      case (Cons(a, _), 1) ⇒ Some((a(), (empty, 0)))
-      case _ ⇒ None
+      case (Cons(a, _), 1)          ⇒ Some((a(), (empty, 0)))
+      case _                        ⇒ None
     }
 
   @tailrec
   final def drop(n: Int): Stream[A] = (this: @switch) match {
-    case Cons(_, t) if n > 1 ⇒ t() drop n - 1
+    case Cons(_, t) if n > 1  ⇒ t() drop n - 1
     case Cons(_, t) if n == 1 ⇒ t()
-    case _ ⇒ this
+    case _                    ⇒ this
   }
 
   @tailrec
   final def drop2(n: Int): Stream[A] = (this: @switch) match {
     case Cons(_, t) if n > 0 ⇒ t() drop2 n - 1
-    case _ ⇒ this
+    case _                   ⇒ this
   }
 
   def takeWhile(p: A ⇒ Boolean): Stream[A] = (this: @switch) match {
     case Cons(h, t) if p(h()) ⇒ cons(h(), t() takeWhile p)
-    case _ ⇒ empty
+    case _                    ⇒ empty
   }
 
   def takeWhile_1(p: A ⇒ Boolean): Stream[A] =
@@ -121,18 +122,18 @@ trait Stream[+A] {
   def takeWhileViaUnfold(p: A ⇒ Boolean): Stream[A] =
     unfold(this) {
       case Cons(a, b) if p(a()) ⇒ Some((a(), b()))
-      case _ ⇒ None
+      case _                    ⇒ None
     }
 
   def forAll(p: A ⇒ Boolean): Boolean = this match {
     // more general implementation, althought not tail-recursive:
     //   foldRight(true){(a, b) => p(a) && b}
     case Cons(h, t) ⇒ p(h()) && t().forAll(p)
-    case _ ⇒ true
+    case _          ⇒ true
   }
 
   def headOption: Option[A] = this match {
-    case Empty ⇒ None
+    case Empty      ⇒ None
     case Cons(h, _) ⇒ Some(h())
   }
 
@@ -147,7 +148,7 @@ trait Stream[+A] {
   def mapViaUnfold[B](f: A ⇒ B): Stream[B] =
     unfold(this) {
       case Cons(h, t) ⇒ Some((f(h()), t()))
-      case _ ⇒ None
+      case _          ⇒ None
     }
 
   def filter(p: A ⇒ Boolean): Stream[A] =
@@ -173,17 +174,22 @@ trait Stream[+A] {
   def zipAll[B](s2: Stream[B]): Stream[(Option[A], Option[B])] =
     zipWithAll(s2)((_, _))
 
-  def zipWithAll[B, C](s2: Stream[B])(f: (Option[A], Option[B]) ⇒ C): Stream[C] =
+  def zipWithAll[B, C](
+      s2: Stream[B]
+  )(f: (Option[A], Option[B]) ⇒ C): Stream[C] =
     Stream.unfold((this, s2)) {
       case (Empty, Empty) ⇒ None
-      case (Cons(h, t), Empty) ⇒ Some(f(Some(h()), Option.empty[B]) -> (t(), empty[B]))
-      case (Empty, Cons(h, t)) ⇒ Some(f(Option.empty[A], Some(h())) -> (empty[A] -> t()))
-      case (Cons(h1, t1), Cons(h2, t2)) ⇒ Some(f(Some(h1()), Some(h2())) -> (t1() -> t2()))
+      case (Cons(h, t), Empty) ⇒
+        Some(f(Some(h()), Option.empty[B]) -> (t(), empty[B]))
+      case (Empty, Cons(h, t)) ⇒
+        Some(f(Option.empty[A], Some(h())) -> (empty[A] -> t()))
+      case (Cons(h1, t1), Cons(h2, t2)) ⇒
+        Some(f(Some(h1()), Some(h2())) -> (t1() -> t2()))
     }
 
   /*
   `s startsWith s2` when corresponding elements of `s` and `s2` are all equal, until the point that `s2` is exhausted. If `s` is exhausted first, or we find an element that doesn't match, we terminate early. Using non-strictness, we can compose these three separate logical steps--the zipping, the termination when the second stream is exhausted, and the termination if a nonmatching element is found or the first stream is exhausted.
-  */
+   */
   def startsWith[A](s: Stream[A]): Boolean =
     zipAll(s).takeWhile(!_._2.isEmpty) forAll {
       case (h, h2) ⇒ h == h2
@@ -191,11 +197,11 @@ trait Stream[+A] {
 
   /*
   The last element of `tails` is always the empty `Stream`, so we handle this as a special case, by appending it to the output.
-  */
+   */
   def tails: Stream[Stream[A]] =
     unfold(this) {
       case Empty ⇒ None
-      case s ⇒ Some((s, s drop 1))
+      case s     ⇒ Some((s, s drop 1))
     } append Stream(empty)
 
   def hasSubsequence[A](s: Stream[A]): Boolean =
@@ -204,12 +210,12 @@ trait Stream[+A] {
   /*
   The function can't be implemented using `unfold`, since `unfold` generates elements of the `Stream` from left to right. It can be implemented using `foldRight` though.
   The implementation is just a `foldRight` that keeps the accumulated value and the stream of intermediate results, which we `cons` onto during each iteration. When writing folds, it's common to have more state in the fold than is needed to compute the result. Here, we simply extract the accumulated list once finished.
-  */
+   */
   def scanRight[B](z: B)(f: (A, ⇒ B) ⇒ B): Stream[B] =
     foldRight((z, Stream(z)))((a, p0) ⇒ {
       // p0 is passed by-name and used in by-name args in f and cons. So use lazy val to ensure only one evaluation...
       lazy val p1 = p0
-      val b2 = f(a, p1._1)
+      val b2      = f(a, p1._1)
       (b2, cons(b2, p1._2))
     })._2
 }
@@ -255,7 +261,7 @@ object Stream {
   // cons(0, go(1, 0 + 1)), cons(0, cons(1, cons(1, 1 + 1))
 
   def unfold[A, S](z: S)(f: S ⇒ Option[(A, S)]): Stream[A] = f(z) match {
-    case None ⇒ empty
+    case None         ⇒ empty
     case Some((a, s)) ⇒ cons(a, unfold(s)(f))
   }
 
@@ -316,7 +322,9 @@ object Stream {
 
     println(s"fibs ${fibs.take(10).toListFast}")
 
-    println(s"HHHH ${unfold[Int, Int](0)(x ⇒ Some(x + x, x + x)).take(10).toListFast}")
+    println(
+      s"HHHH ${unfold[Int, Int](0)(x ⇒ Some(x + x, x + x)).take(10).toListFast}"
+    )
 
     println(s"tails ${s.tails.take(10).map(_.toListFast).toListFast}")
 

@@ -1,16 +1,21 @@
 package fpscala.errorhandling
 
-import scala.annotation.{ switch, tailrec }
-import scala.{ Option ⇒ _, Some ⇒ _, Either ⇒ _, _ } // hide std library `Option`, `Some` and `Either`, since we are writing our own in this chapter
+import scala.annotation.{switch, tailrec}
+import scala.{
+  Option ⇒ _,
+  Some ⇒ _,
+  Either ⇒ _,
+  _
+} // hide std library `Option`, `Some` and `Either`, since we are writing our own in this chapter
 
 sealed trait Option[+A] {
   def map[B](f: A ⇒ B): Option[B] = this match {
-    case None ⇒ None
+    case None    ⇒ None
     case Some(x) ⇒ Some(f(x))
   }
 
   def getOrElse[B >: A](default: ⇒ B): B = this match {
-    case None ⇒ default
+    case None    ⇒ default
     case Some(x) ⇒ x
   }
 
@@ -25,7 +30,7 @@ sealed trait Option[+A] {
     this map (Some(_)) getOrElse ob
   /*
   Again, we can implement this with explicit pattern matching.
-  */
+   */
   //def orElse_1[B>:A](ob: => Option[B]): Option[B] = this match {
   //  case None => ob
   //  case _ => this
@@ -33,7 +38,7 @@ sealed trait Option[+A] {
 
   def filter(f: A ⇒ Boolean): Option[A] = this match {
     case Some(x) if f(x) ⇒ this
-    case _ ⇒ None
+    case _               ⇒ None
   }
 
   def filter_1(f: A ⇒ Boolean): Option[A] =
@@ -41,7 +46,7 @@ sealed trait Option[+A] {
 }
 
 case class Some[+A](get: A) extends Option[A]
-case object None extends Option[Nothing]
+case object None            extends Option[Nothing]
 
 object Option {
 
@@ -50,18 +55,19 @@ object Option {
 
   //  @tailrec
   def sequence[A](a: List[Option[A]]): Option[List[A]] = (a: @switch) match {
-    case Nil ⇒ Some(Nil)
+    case Nil    ⇒ Some(Nil)
     case h :: t ⇒ h flatMap (hh ⇒ sequence(t) map (hh +: _))
   }
 
   def sequence_1[A](a: List[Option[A]]): Option[List[A]] =
     a.foldRight[Option[List[A]]](Some(Nil))((a, b) ⇒ map2(a, b)(_ +: _))
 
-  def traverse[A, B](a: List[A])(f: A ⇒ Option[B]): Option[List[B]] = (a: @switch) match {
-    case Nil ⇒ Some(Nil)
-    case h :: t ⇒
-      map2(f(h), traverse(t)(f))(_ :: _)
-  }
+  def traverse[A, B](a: List[A])(f: A ⇒ Option[B]): Option[List[B]] =
+    (a: @switch) match {
+      case Nil ⇒ Some(Nil)
+      case h :: t ⇒
+        map2(f(h), traverse(t)(f))(_ :: _)
+    }
 
   def traverse_1[A, B](a: List[A])(f: A ⇒ Option[B]): Option[List[B]] = ???
 
@@ -85,4 +91,3 @@ object Option {
 
   }
 }
-

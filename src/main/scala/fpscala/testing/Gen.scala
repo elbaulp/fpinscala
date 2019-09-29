@@ -17,7 +17,7 @@
 
 package fpscala.testing
 
-import scala.language.{ implicitConversions, postfixOps }
+import scala.language.{implicitConversions, postfixOps}
 
 import Gen._
 import Prop._
@@ -27,38 +27,37 @@ import fpscala.state._
 /*
 The library developed in this chapter goes through several iterations. This file is just the
 shell, which you can fill in and modify while working through the chapter.
-*/
+ */
 case class Prop(run: (MaxSize, TestCases, RNG) ⇒ Result) {
 
   def &&(p: Prop) = Prop { (m, t, rng) ⇒
     run(m, t, rng) match {
       case Passed | Proved ⇒ p run (m, t, rng)
-      case o ⇒ o
+      case o               ⇒ o
     }
   }
 
   def ||(p: Prop): Prop = Prop { (m, t, rng) ⇒
     run(m, t, rng) match {
       case Falsified(msg, _) ⇒ p.tag(msg) run (m, t, rng)
-      case x ⇒ x
+      case x                 ⇒ x
     }
   }
 
-  def tag(msg: FailedCase) = Prop {
-    (m, t, rng) ⇒
-      run(m, t, rng) match {
-        case Falsified(e, c) ⇒ Falsified(s"$msg\n$e", c)
-        case x ⇒ x
-      }
+  def tag(msg: FailedCase) = Prop { (m, t, rng) ⇒
+    run(m, t, rng) match {
+      case Falsified(e, c) ⇒ Falsified(s"$msg\n$e", c)
+      case x               ⇒ x
+    }
   }
 
 }
 
 object Prop {
   type SuccessCount = Int
-  type TestCases = Int
-  type MaxSize = Int
-  type FailedCase = String
+  type TestCases    = Int
+  type MaxSize      = Int
+  type FailedCase   = String
 
   sealed trait Result {
     def isFalsified: Boolean
@@ -66,9 +65,8 @@ object Prop {
   case object Passed extends Result {
     def isFalsified = false
   }
-  case class Falsified(
-    failure: FailedCase,
-    successes: SuccessCount) extends Result {
+  case class Falsified(failure: FailedCase, successes: SuccessCount)
+      extends Result {
     def isFalsified = true
   }
   case object Proved extends Result {
@@ -84,30 +82,42 @@ object Prop {
     Stream.unfold(rng)(rng ⇒ Some(g.sample.run(rng)))
 
   def apply(f: (TestCases, RNG) ⇒ Result): Prop =
-    Prop { (_, n, rng) ⇒ f(n, rng) }
+    Prop { (_, n, rng) ⇒
+      f(n, rng)
+    }
 
   def forAll[A](g: SGen[A])(f: A ⇒ Boolean): Prop =
     forAll(g(_))(f)
 
-  def forAll[A](g: Int ⇒ Gen[A])(f: A ⇒ Boolean): Prop = Prop {
-    (max, n, rng) ⇒
-      val casesPerSize = (n - 1) / max + 1
-      val props: Stream[Prop] =
-        Stream.from(0).take((n min max) + 1).map(i ⇒ forAll(g(i))(f))
-      val prop: Prop =
-        props.map(p ⇒ Prop { (max, n, rng) ⇒
-          p.run(max, casesPerSize, rng)
-        }).toList.reduce(_ && _)
-      prop.run(max, n, rng)
+  def forAll[A](g: Int ⇒ Gen[A])(f: A ⇒ Boolean): Prop = Prop { (max, n, rng) ⇒
+    val casesPerSize = (n - 1) / max + 1
+    val props: Stream[Prop] =
+      Stream.from(0).take((n min max) + 1).map(i ⇒ forAll(g(i))(f))
+    val prop: Prop =
+      props
+        .map(
+          p ⇒
+            Prop { (max, n, rng) ⇒
+              p.run(max, casesPerSize, rng)
+            }
+        )
+        .toList
+        .reduce(_ && _)
+    prop.run(max, n, rng)
   }
 
-  def forAll[A](as: Gen[A])(f: A ⇒ Boolean): Prop = Prop {
-    (n, rng) ⇒
-      randomStream(as)(rng).zip(Stream.from(0)).take(n).map {
-        case (a, i) ⇒ try {
-          if (f(a)) Passed else Falsified(a.toString, i)
-        } catch { case e: Exception ⇒ Falsified(buildMsg(a, e), i) }
-      }.find(_.isFalsified).getOrElse(Passed)
+  def forAll[A](as: Gen[A])(f: A ⇒ Boolean): Prop = Prop { (n, rng) ⇒
+    randomStream(as)(rng)
+      .zip(Stream.from(0))
+      .take(n)
+      .map {
+        case (a, i) ⇒
+          try {
+            if (f(a)) Passed else Falsified(a.toString, i)
+          } catch { case e: Exception ⇒ Falsified(buildMsg(a, e), i) }
+      }
+      .find(_.isFalsified)
+      .getOrElse(Passed)
   }
 
   // String interpolation syntax. A string starting with `s"` can refer to
@@ -119,10 +129,11 @@ object Prop {
       s"stack trace:\n ${e.getStackTrace.mkString("\n")}"
 
   def run(
-    p: Prop,
-    maxSize: Int = 100,
-    testCases: Int = 100,
-    rng: RNG = RNG.Simple(System.currentTimeMillis)): Unit =
+      p: Prop,
+      maxSize: Int = 100,
+      testCases: Int = 100,
+      rng: RNG = RNG.Simple(System.currentTimeMillis)
+  ): Unit =
     p.run(maxSize, testCases, rng) match {
       case Falsified(msg, n) ⇒
         println(s"! Falsified after $n passed tests:\n $msg")
@@ -181,7 +192,9 @@ object Gen {
   def weighted[A](g1: (Gen[A], Double), g2: (Gen[A], Double)): Gen[A] = {
     val thr = g1._2.abs / (g1._2.abs + g2._2.abs)
 
-    Gen(State(RNG.double).flatMap(p ⇒ if (p < thr) g1._1.sample else g2._1.sample))
+    Gen(
+      State(RNG.double).flatMap(p ⇒ if (p < thr) g1._1.sample else g2._1.sample)
+    )
   }
 
 }
@@ -193,11 +206,10 @@ case class SGen[+A](forSize: Int ⇒ Gen[A]) {
     forSize(_) map f
   }
 
-  def flatMap[B](f: A ⇒ SGen[B]): SGen[B] = SGen {
-    n ⇒
-      {
-        forSize(n) flatMap { f(_) forSize n }
-      }
+  def flatMap[B](f: A ⇒ SGen[B]): SGen[B] = SGen { n ⇒
+    {
+      forSize(n) flatMap { f(_) forSize n }
+    }
   }
 }
 
@@ -215,8 +227,8 @@ object App {
       (nss.isEmpty || nss.tail.isEmpty || !nss.zip(nss.tail).exists {
         case (a, b) ⇒ a > b
       }) &&
-        !ns.exists(!nss.contains(_)) &&
-        !nss.exists(!ns.contains(_))
+      !ns.exists(!nss.contains(_)) &&
+      !nss.exists(!ns.contains(_))
     }
     Prop.run(sortedProp)
   }

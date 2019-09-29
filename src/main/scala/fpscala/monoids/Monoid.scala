@@ -30,42 +30,42 @@ object Monoid {
 
   val stringMonoid = new Monoid[String] {
     def op(a1: String, a2: String) = a1 + a2
-    val zero = ""
+    val zero                       = ""
   }
 
   def listMonoid[A] = new Monoid[List[A]] {
     def op(a1: List[A], a2: List[A]) = a1 ++ a2
-    val zero = Nil
+    val zero                         = Nil
   }
 
   val intAddition: Monoid[Int] = new Monoid[Int] {
     def op(a1: Int, a2: Int): Int = a1 + a2
-    val zero = 0
+    val zero                      = 0
   }
 
   val intMultiplication: Monoid[Int] = new Monoid[Int] {
     def op(a1: Int, a2: Int): Int = a1 * a2
-    val zero = 1
+    val zero                      = 1
   }
 
   val booleanOr: Monoid[Boolean] = new Monoid[Boolean] {
     def op(a1: Boolean, a2: Boolean): Boolean = a1 | a2
-    val zero = false
+    val zero                                  = false
   }
 
   val booleanAnd: Monoid[Boolean] = new Monoid[Boolean] {
     def op(a1: Boolean, a2: Boolean): Boolean = a1 & a2
-    val zero = true
+    val zero                                  = true
   }
 
   def optionMonoid[A]: Monoid[Option[A]] = new Monoid[Option[A]] {
     def op(a1: Option[A], a2: Option[A]): Option[A] = a1 orElse a2
-    val zero = None
+    val zero                                        = None
   }
 
   def endoMonoid[A]: Monoid[A ⇒ A] = new Monoid[A ⇒ A] {
     def op(f: A ⇒ A, h: A ⇒ A): A ⇒ A = f compose h
-    def zero = identity
+    def zero                          = identity
   }
 
   // TODO: Placeholder for `Prop`. Remove once you have implemented the `Prop`
@@ -82,9 +82,11 @@ object Monoid {
       x ← gen
       y ← gen
       z ← gen
-    } yield (x, y, z))(v ⇒
-      // Assoc law
-      m.op(v._1, m.op(v._2, v._3)) == m.op(m.op(v._1, v._2), v._3)) &&
+    } yield (x, y, z))(
+      v ⇒
+        // Assoc law
+        m.op(v._1, m.op(v._2, v._3)) == m.op(m.op(v._1, v._2), v._3)
+    ) &&
       // Idendity law
       forAll(gen)(x ⇒ m.op(x, m.zero) == x && m.op(m.zero, x) == x)
 
@@ -97,10 +99,16 @@ object Monoid {
     as.map(f).foldLeft(m.zero)(m.op)
 
   def foldRight[A, B](as: List[A])(z: B)(f: (A, B) ⇒ B): B =
-    ???
+    foldMap(as, endoMonoid[B])(f.curried)(z)
 
   def foldLeft[A, B](as: List[A])(z: B)(f: (B, A) ⇒ B): B =
-    ???
+    foldMap(as, dual(endoMonoid[B]))(a => b => f(b, a))(z)
+
+  // We can get the dual of any monoid just by flipping the `op`.
+  def dual[A](m: Monoid[A]): Monoid[A] = new Monoid[A] {
+    def op(x: A, y: A): A = m.op(y, x)
+    val zero              = m.zero
+  }
 
   def foldMapV[A, B](as: IndexedSeq[A], m: Monoid[B])(f: A ⇒ B): B =
     ???
@@ -108,31 +116,35 @@ object Monoid {
   def ordered(ints: IndexedSeq[Int]): Boolean =
     ???
 
-  sealed trait WC
-  case class Stub(chars: String) extends WC
-  case class Part(lStub: String, words: Int, rStub: String) extends WC
-
-  def par[A](m: Monoid[A]): Monoid[Par[A]] =
-    ???
-
-  def parFoldMap[A, B](v: IndexedSeq[A], m: Monoid[B])(f: A ⇒ B): Par[B] =
-    ???
-
-  val wcMonoid: Monoid[WC] = ???
-
-  def count(s: String): Int = ???
-
-  def productMonoid[A, B](A: Monoid[A], B: Monoid[B]): Monoid[(A, B)] =
-    ???
-
-  def functionMonoid[A, B](B: Monoid[B]): Monoid[A ⇒ B] =
-    ???
-
-  def mapMergeMonoid[K, V](V: Monoid[V]): Monoid[Map[K, V]] =
-    ???
-
-  def bag[A](as: IndexedSeq[A]): Map[A, Int] =
-    ???
+//  sealed trait WC
+//  case class Stub(chars: String) extends WC
+//  case class Part(lStub: String, words: Int, rStub: String) extends WC
+//
+//  def par[A](m: Monoid[A]): Monoid[Par[A]] =
+//    ???
+//
+//  def parFoldMap[A, B](v: IndexedSeq[A], m: Monoid[B])(f: A ⇒ B): Par[B] =
+//    ???
+//
+//  val wcMonoid: Monoid[WC] = ???
+//
+//  def count(s: String): Int = ???
+//
+//  def productMonoid[A, B](A: Monoid[A], B: Monoid[B]): Monoid[(A, B)] =
+//    ???
+//
+//  def functionMonoid[A, B](B: Monoid[B]): Monoid[A ⇒ B] =
+//    ???
+//
+//  def mapMergeMonoid[K, V](V: Monoid[V]): Monoid[Map[K, V]] =
+//    ???
+//
+//  def bag[A](as: IndexedSeq[A]): Map[A, Int] =
+//    ???
+//
+  def main(args: Array[String]): Unit = {
+    println(s"HOLA QUE TAL ${stringMonoid.op("HOLA", "HOLA")}")
+  }
 }
 
 trait Foldable[F[_]] {
@@ -180,7 +192,7 @@ object StreamFoldable extends Foldable[Stream] {
 }
 
 sealed trait Tree[+A]
-case class Leaf[A](value: A) extends Tree[A]
+case class Leaf[A](value: A)                        extends Tree[A]
 case class Branch[A](left: Tree[A], right: Tree[A]) extends Tree[A]
 
 object TreeFoldable extends Foldable[Tree] {

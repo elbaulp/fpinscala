@@ -1,7 +1,7 @@
 package fpscala.datastructures
 
 sealed trait Tree[+A]
-case class Leaf[A](value: A) extends Tree[A]
+case class Leaf[A](value: A)                        extends Tree[A]
 case class Branch[A](left: Tree[A], right: Tree[A]) extends Tree[A]
 
 object Tree {
@@ -20,13 +20,13 @@ object Tree {
 
   // EX 3.25
   def size2[T](t: Tree[T]): Int = t match {
-    case Leaf(_) ⇒ 1
+    case Leaf(_)      ⇒ 1
     case Branch(l, r) ⇒ 1 + size2(l) + size2(r)
   }
 
   // ex 3.26
   def maximum(t: Tree[Int]): Int = t match {
-    case Leaf(n) ⇒ n
+    case Leaf(n)      ⇒ n
     case Branch(l, r) ⇒ maximum(l) max maximum(r)
   }
 
@@ -39,13 +39,13 @@ object Tree {
 
   // 3.28
   def map[T, R](t: Tree[T])(f: T ⇒ R): Tree[R] = t match {
-    case Leaf(x) ⇒ Leaf(f(x))
+    case Leaf(x)      ⇒ Leaf(f(x))
     case Branch(l, r) ⇒ Branch(map(l)(f), map(r)(f))
   }
 
   // 3.29
   def fold[T, R](t: Tree[T])(f: T ⇒ R)(g: (R, R) ⇒ R): R = t match {
-    case Leaf(x) ⇒ f(x)
+    case Leaf(x)      ⇒ f(x)
     case Branch(l, r) ⇒ g(fold(l)(f)(g), fold(r)(f)(g))
   }
 
