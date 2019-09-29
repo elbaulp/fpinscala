@@ -111,7 +111,14 @@ object Monoid {
   }
 
   def foldMapV[A, B](as: IndexedSeq[A], m: Monoid[B])(f: A ⇒ B): B =
-    ???
+    if (as.length == 0)
+      m.zero
+    else if (as.length == 1)
+      f(as head)
+    else {
+      val (a, b) = as.splitAt(as.length / 2)
+      m.op(foldMapV(a, m)(f), foldMapV(b, m)(f))
+    }
 
   def ordered(ints: IndexedSeq[Int]): Boolean =
     ???
@@ -143,7 +150,10 @@ object Monoid {
 //    ???
 //
   def main(args: Array[String]): Unit = {
-    println(s"HOLA QUE TAL ${stringMonoid.op("HOLA", "HOLA")}")
+    println("Exercise 10.8. FoldMapV")
+    println(
+      s"${Monoid.foldMapV(IndexedSeq("Lorem", "Ipsum"), Monoid.stringMonoid)(x => x + " ")}"
+    )
   }
 }
 
