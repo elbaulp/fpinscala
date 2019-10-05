@@ -120,8 +120,21 @@ object Monoid {
       m.op(foldMapV(a, m)(f), foldMapV(b, m)(f))
     }
 
-  def ordered(ints: IndexedSeq[Int]): Boolean =
-    ???
+  def ordered(ints: IndexedSeq[Int]): Boolean = {
+    val orderMonoid = new Monoid[Option[(Int, Int, Boolean)]] {
+      val zero = None
+      def op(a: Option[(Int, Int, Boolean)], b: Option[(Int, Int, Boolean)]) =
+        (a, b) match {
+          case (Some((x1, y1, b1)), Some((x2, y2, b2))) =>
+            Some((x1 min x2, y1 max y2, b1 & b2 && y1 <= x2))
+          case (None, x) => x
+          case (x, None) => x
+        }
+    }
+    foldMapV(ints, orderMonoid)(i => Some((i, i, true)))
+      .map(_._3)
+      .getOrElse(true)
+  }
 
 //  sealed trait WC
 //  case class Stub(chars: String) extends WC
@@ -153,6 +166,14 @@ object Monoid {
     println("Exercise 10.8. FoldMapV")
     println(
       s"${Monoid.foldMapV(IndexedSeq("Lorem", "Ipsum"), Monoid.stringMonoid)(x => x + " ")}"
+    )
+
+    println("Exercise 10.9. Ordered")
+    println(
+      s"${Monoid.ordered(IndexedSeq(1, 2, 3, 4, 5, 6))}"
+    )
+    println(
+      s"${Monoid.ordered(IndexedSeq(1, 2, 19, 4, 5, 6))}"
     )
   }
 }
